@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#082b48">
+  <title>Dominó — Duplo-seis</title>
+  <link rel="icon" type="image/png" href="light/tile_3_5.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ======================= MENU INICIAL ======================= -->
+  <section id="screen-menu" class="screen is-active" aria-label="Menu inicial">
+    <div class="menu-stage">
+      <div class="cascade" id="cascade" aria-hidden="true"></div>
+
+      <h1 class="logo">Dominó</h1>
+      <p class="tagline">Duelo para dois jogadores. Duplo-seis, 28 peças.</p>
+
+      <nav class="menu-buttons" aria-label="Menu principal">
+        <button class="btn btn-primary btn-xl" id="btn-play" type="button">Jogar</button>
+        <button class="btn btn-wide" id="btn-skins" type="button">Peças</button>
+        <button class="btn btn-wide" id="btn-howto" type="button">Como jogar</button>
+        <button class="btn btn-wide" id="btn-settings" type="button">Configurações</button>
+        <button class="btn btn-wide" id="btn-stats" type="button">Estatísticas</button>
+      </nav>
+
+      <p class="credit">Peças: Domino Pack, de Kenney (CC0)</p>
+    </div>
+  </section>
+
+  <!-- ======================= PARTIDA ======================= -->
+  <section id="screen-game" class="screen" aria-label="Partida de dominó">
+    <header class="topbar">
+      <button class="btn btn-small" id="btn-pause" type="button" aria-label="Abrir o menu da partida">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>
+        <span>Menu</span>
+      </button>
+
+      <div class="topbar-info">
+        <span class="chip" id="round-label">Rodada 1</span>
+        <span class="chip" id="target-label">Meta: 50 pontos</span>
+      </div>
+
+      <div class="turn-banner" id="turn-banner" role="status" aria-live="polite">Preparando a mesa…</div>
+
+      <button class="icon-btn" id="btn-sound" type="button" aria-pressed="true" aria-label="Som ligado">
+        <svg class="ico-on" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        <svg class="ico-off" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      </button>
+    </header>
+
+    <div class="table">
+      <!-- Adversário no topo; embaixo fica quem está jogando (no modo pessoa, o jogador da vez) -->
+      <aside class="seat seat-top" id="seat-opp" aria-label="Adversário">
+        <div class="seat-avatar"></div>
+        <div class="seat-info"><span class="seat-name"></span><span class="seat-score"><b>0</b> pts</span></div>
+        <div class="seat-hand" aria-hidden="true"></div>
+        <span class="seat-count" title="Peças na mão">0</span>
+        <span class="seat-bubble" aria-hidden="true"></span>
+      </aside>
+
+      <div class="board" id="board">
+        <div class="board-origin"><div class="board-anchor" id="board-anchor"></div></div>
+        <p class="board-hint" id="board-hint">A mesa está vazia.</p>
+        <div class="boneyard-chip" id="boneyard-chip" title="Peças no monte">
+          <span class="stack" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Monte <b id="boneyard-count">0</b></span>
+        </div>
+        <div class="ends-chip" id="ends-chip" aria-label="Pontas abertas"><span>Pontas</span> <b id="end-left">–</b> <b id="end-right">–</b></div>
+      </div>
+    </div>
+
+    <footer class="player-area">
+      <div class="seat seat-me" id="seat-me">
+        <div class="seat-avatar"></div>
+        <div class="seat-info"><span class="seat-name"></span><span class="seat-score"><b>0</b> pts</span></div>
+        <span class="seat-count" title="Peças na mão">0</span>
+        <span class="seat-bubble" aria-hidden="true"></span>
+      </div>
+
+      <div class="actions" id="actions">
+        <button class="btn btn-primary" id="btn-draw" type="button" hidden>Comprar peça</button>
+        <button class="btn btn-primary" id="btn-pass" type="button" hidden>Passar a vez</button>
+      </div>
+
+      <div class="hand" id="hand" role="list" aria-label="Suas peças"></div>
+    </footer>
+  </section>
+</div>
+
+<!-- Modo pessoa: esconde as peças enquanto o aparelho troca de mãos -->
+<div id="curtain" class="curtain" hidden role="dialog" aria-modal="true" aria-labelledby="curtain-title">
+  <button class="btn btn-small curtain-menu" id="curtain-menu" type="button">Menu</button>
+  <div class="curtain-card">
+    <p class="curtain-kicker">Passe o aparelho</p>
+    <h2 id="curtain-title">Vez de <span id="curtain-name"></span></h2>
+    <p class="curtain-sub">Só quem vai jogar deve olhar a tela. Toque em Pronto quando estiver com o aparelho.</p>
+    <button class="btn btn-primary btn-xl" id="curtain-ready" type="button">Pronto</button>
+  </div>
+</div>
+
+<!-- ======================= DIÁLOGOS ======================= -->
+
+<dialog id="modal-howto" class="modal" aria-labelledby="howto-title">
+  <div class="modal-head">
+    <h2 id="howto-title">Como jogar</h2>
+    <button class="icon-btn modal-close" type="button" data-close aria-label="Fechar">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body prose">
+    <h3>Objetivo</h3>
+    <p>Seja o primeiro a ficar sem peças na mão. Se ninguém puder jogar, o jogo fecha e vence quem tiver menos pontos nas peças que sobraram.</p>
+
+    <h3>Preparação</h3>
+    <p>O jogo usa as 28 peças do duplo-seis, embaralhadas a cada rodada. Cada jogador recebe 7 peças. Com a compra ligada, as 14 restantes ficam no monte; com ela desligada, ficam fora do jogo.</p>
+    <p>Na primeira rodada começa quem tiver a maior carroça (peça com os dois lados iguais). Se ninguém tiver carroça, começa quem tiver a peça de maior soma. Nas rodadas seguintes, quem venceu a anterior começa com qualquer peça.</p>
+
+    <h3>Sua vez</h3>
+    <ul>
+      <li>Jogue uma peça que tenha o mesmo número de uma das duas pontas da mesa.</li>
+      <li>Peças que encaixam ficam destacadas. Para jogar, clique na peça e <b>arraste até a mesa</b>.</li>
+      <li>Ao arrastar, os encaixes aparecem na mesa: solte a peça sobre o encaixe da ponta que você quer.</li>
+      <li>Sem peça que encaixe, e com a compra ligada, clique em <b>Comprar peça</b> até conseguir jogar. Quando o monte acabar, passe a vez.</li>
+    </ul>
+
+    <h3>Pontuação</h3>
+    <p>Quem bate (fica sem peças) soma os pontos de todas as peças que sobraram na mão do adversário. Cada ponto da peça vale 1: a peça 3–5 vale 8.</p>
+    <p>No jogo fechado, vence quem tem menos pontos na mão e soma os pontos do adversário. Se houver empate nos pontos, vence quem tem menos peças. Se o empate continuar, a rodada empata e ninguém pontua.</p>
+
+    <h3>Modos de jogo</h3>
+    <p>Ao tocar em <b>Jogar</b> você escolhe entre jogar <b>contra o bot</b> ou <b>contra uma pessoa</b>, e define o fim da partida (1 rodada, 50 ou 100 pontos) e a compra de peças.</p>
+    <p><b>Contra o bot</b> você também escolhe a dificuldade. <b>Fácil</b> joga peças ao acaso. <b>Médio</b> descarta peças pesadas e procura manter jogadas disponíveis. <b>Difícil</b> também conta as peças que já saíram e percebe quando o adversário passou, para tentar travar o jogo.</p>
+    <p><b>Contra uma pessoa</b> os dois jogam no mesmo aparelho. A cada troca de vez aparece uma tela pedindo para passar o aparelho, assim ninguém vê as peças do outro.</p>
+
+    <h3>Estilos de peça</h3>
+    <p>No botão <b>Peças</b> do menu você troca o estilo. Só o Claro começa liberado. Vença partidas contra o bot para liberar os outros: Escuro com 5 vitórias, Corações com 8, Estrelas com 12 e Gengibre com 16.</p>
+  </div>
+</dialog>
+
+<dialog id="modal-settings" class="modal" aria-labelledby="settings-title">
+  <div class="modal-head">
+    <h2 id="settings-title">Configurações</h2>
+    <button class="icon-btn modal-close" type="button" data-close aria-label="Fechar">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body settings">
+
+    <div class="field field-switch">
+      <label for="set-hints">Destacar peças que encaixam</label>
+      <input id="set-hints" type="checkbox" class="switch" role="switch">
+    </div>
+
+    <div class="field field-switch">
+      <label for="set-autopass">Passar a vez automaticamente</label>
+      <input id="set-autopass" type="checkbox" class="switch" role="switch">
+    </div>
+
+    <div class="field field-switch">
+      <label for="set-sound">Efeitos sonoros</label>
+      <input id="set-sound" type="checkbox" class="switch" role="switch">
+    </div>
+
+    <div class="field">
+      <label for="set-volume">Volume</label>
+      <input id="set-volume" type="range" min="0" max="100" step="5">
+    </div>
+
+    <div class="modal-foot-actions">
+      <button class="btn btn-danger btn-small" id="btn-reset-all" type="button">Restaurar padrões</button>
+      <button class="btn btn-primary" type="button" data-close>Pronto</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="modal-newgame" class="modal" aria-labelledby="newgame-title">
+  <div class="modal-head">
+    <h2 id="newgame-title">Nova partida</h2>
+    <button class="icon-btn modal-close" type="button" data-close aria-label="Fechar">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body" id="newgame-body">
+
+    <!-- Passo 1: contra quem jogar -->
+    <div id="ng-step-mode">
+      <p class="ng-lead">Contra quem você quer jogar?</p>
+      <div class="mode-grid">
+        <button class="mode-card" type="button" data-mode="bot">
+          <svg viewBox="0 0 48 48" width="52" height="52" aria-hidden="true"><rect x="9" y="14" width="30" height="24" rx="8" fill="currentColor"/><rect x="21" y="6" width="6" height="8" rx="3" fill="currentColor"/><circle cx="18" cy="26" r="4" fill="var(--cream)"/><circle cx="30" cy="26" r="4" fill="var(--cream)"/><rect x="18" y="32" width="12" height="2.6" rx="1.3" fill="var(--cream)"/></svg>
+          <b>Contra o bot</b>
+          <small>Jogue sozinho contra o computador.</small>
+        </button>
+        <button class="mode-card" type="button" data-mode="pvp">
+          <svg viewBox="0 0 48 48" width="52" height="52" aria-hidden="true"><circle cx="17" cy="16" r="7" fill="currentColor"/><path d="M4 40c0-8 6-13 13-13s13 5 13 13z" fill="currentColor"/><circle cx="33" cy="19" r="6" fill="currentColor" opacity=".6"/><path d="M26 41c.5-6 4-10 9-10s9 4 9 10z" fill="currentColor" opacity=".6"/></svg>
+          <b>Contra uma pessoa</b>
+          <small>Dois jogadores no mesmo aparelho, passando-o a cada vez.</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- Passo 2: ajustes da partida -->
+    <div id="ng-step-setup" hidden>
+      <div class="field" data-only="bot">
+        <label for="set-name">Seu nome</label>
+        <input id="set-name" type="text" maxlength="14" autocomplete="nickname" spellcheck="false">
+      </div>
+
+      <div class="field" data-only="pvp">
+        <label for="set-p1">Jogador 1</label>
+        <input id="set-p1" type="text" maxlength="14" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field" data-only="pvp">
+        <label for="set-p2">Jogador 2</label>
+        <input id="set-p2" type="text" maxlength="14" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="field" data-only="bot">
+        <span class="field-label" id="lbl-diff">Dificuldade</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-diff" id="set-difficulty">
+          <label><input type="radio" name="set-diff" value="easy"><span>Fácil</span></label>
+          <label><input type="radio" name="set-diff" value="medium"><span>Médio</span></label>
+          <label><input type="radio" name="set-diff" value="hard"><span>Difícil</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label" id="lbl-target">Fim da partida</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-target" id="set-target">
+          <label><input type="radio" name="set-target" value="0"><span>1 rodada</span></label>
+          <label><input type="radio" name="set-target" value="50"><span>50 pontos</span></label>
+          <label><input type="radio" name="set-target" value="100"><span>100 pontos</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label" id="lbl-draw">Compra de peças</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-draw" id="set-draw">
+          <label><input type="radio" name="set-draw" value="1"><span>Com compra (7 + monte)</span></label>
+          <label><input type="radio" name="set-draw" value="0"><span>Sem compra (7)</span></label>
+        </div>
+      </div>
+
+      <div class="field" data-only="bot">
+        <span class="field-label" id="lbl-speed">Velocidade do adversário</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-speed" id="set-speed">
+          <label><input type="radio" name="set-speed" value="slow"><span>Lenta</span></label>
+          <label><input type="radio" name="set-speed" value="normal"><span>Normal</span></label>
+          <label><input type="radio" name="set-speed" value="fast"><span>Rápida</span></label>
+        </div>
+      </div>
+
+      <div class="modal-foot-actions">
+        <button class="btn" id="ng-back" type="button">Voltar</button>
+        <button class="btn btn-primary" id="ng-start" type="button">Começar partida</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="modal-skins" class="modal" aria-labelledby="skins-title">
+  <div class="modal-head">
+    <h2 id="skins-title">Peças</h2>
+    <button class="icon-btn modal-close" type="button" data-close aria-label="Fechar">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <p class="skins-wins">Vitórias contra o bot: <b id="skins-wins">0</b></p>
+    <div class="skins-grid" id="skins-grid"></div>
+    <p class="skins-hint" id="skins-hint" role="status" aria-live="polite"></p>
+    <div class="modal-foot-actions">
+      <button class="btn btn-primary" type="button" data-close>Pronto</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="modal-stats" class="modal" aria-labelledby="stats-title">
+  <div class="modal-head">
+    <h2 id="stats-title">Estatísticas</h2>
+    <button class="icon-btn modal-close" type="button" data-close aria-label="Fechar">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <dl class="stats-grid" id="stats-grid"></dl>
+    <h3 class="stats-sub">Partidas contra o bot, por dificuldade</h3>
+    <table class="stats-table" id="stats-diff">
+      <thead><tr><th scope="col">Nível</th><th scope="col">Jogadas</th><th scope="col">Vitórias</th><th scope="col">Aproveitamento</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="modal-foot-actions">
+      <button class="btn btn-danger btn-small" id="btn-reset-stats" type="button">Zerar estatísticas</button>
+      <button class="btn btn-primary" type="button" data-close>Fechar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="modal-pause" class="modal modal-narrow" aria-labelledby="pause-title">
+  <div class="modal-head">
+    <h2 id="pause-title">Partida em andamento</h2>
+    <button class="icon-btn modal-close" type="button" data-close aria-label="Continuar jogando">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body stack-buttons">
+    <button class="btn btn-primary" type="button" data-close>Continuar</button>
+    <button class="btn" id="pause-howto" type="button">Como jogar</button>
+    <button class="btn" id="pause-settings" type="button">Configurações</button>
+    <button class="btn" id="pause-restart" type="button">Reiniciar partida</button>
+    <button class="btn btn-danger" id="pause-quit" type="button">Sair para o menu</button>
+  </div>
+</dialog>
+
+<dialog id="modal-roundend" class="modal" aria-labelledby="roundend-title">
+  <div class="modal-head">
+    <h2 id="roundend-title">Fim da rodada</h2>
+  </div>
+  <div class="modal-body">
+    <p class="roundend-sub" id="roundend-sub"></p>
+    <ul class="roundend-list" id="roundend-list"></ul>
+    <div class="unlock-note" id="roundend-unlock" hidden></div>
+    <div class="modal-foot-actions">
+      <button class="btn" id="btn-roundend-menu" type="button">Menu inicial</button>
+      <button class="btn btn-primary" id="btn-roundend-next" type="button">Próxima rodada</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="modal-confirm" class="modal modal-narrow" aria-labelledby="confirm-title">
+  <div class="modal-head"><h2 id="confirm-title">Confirmar</h2></div>
+  <div class="modal-body">
+    <p id="confirm-text"></p>
+    <div class="modal-foot-actions">
+      <button class="btn" id="confirm-no" type="button">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-yes" type="button">Confirmar</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="fx-layer" aria-hidden="true"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
